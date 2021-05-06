@@ -1,0 +1,53 @@
+<!--
+  Copyright 2020 Google LLC
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  https://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<html>
+
+  <head>
+    <title>Go Safehttp sample application</title>
+    <link rel="stylesheet" href="/static/styles.css">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap">
+  </head>
+
+  <body>
+    <h2> Welcome to NoteKeeper </h2>
+    <form action="/logout" method="post">
+      <div class="padded">
+        <button type="submit">Logout</button>
+      </div>
+    </form>
+
+    <dl>
+      {{ range .notes }}
+      <dt>{{.Title}}</dt>
+      <dd>{{.Text}}</dd>
+      {{ end}}
+    </dl>
+
+    <form action="/notes" method="post" id="newnote">
+      <div class="padded">
+        <label for="title"><b>Title</b></label>
+        <input type="text" placeholder="Title" name="title" required>
+
+        <label for="text"><b>Text</b></label>
+        <textarea name="text" form="newnote"></textarea>
+
+        <button type="submit">Save</button>
+      </div>
+    </form>
+  </body>
+
+</html>

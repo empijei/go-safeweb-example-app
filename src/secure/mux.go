@@ -39,7 +39,7 @@ func (dispatcher) Error(rw http.ResponseWriter, resp safehttp.ErrorResponse) err
 	if ce, ok := resp.(ErrorResponse); ok {
 		rw.Header().Set("Content-Type", "text/html; charset=utf-8")
 		rw.WriteHeader(int(ce.code))
-		return templates.ExecuteTemplate(rw, "errors.tpl.html", ce.message)
+		return templates.ExecuteTemplate(rw, "error.tpl.html", ce.message)
 	}
 	return safehttp.DefaultDispatcher{}.Error(rw, resp)
 }

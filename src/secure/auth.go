@@ -16,6 +16,7 @@ package secure
 
 import (
 	"context"
+	"log"
 
 	"github.com/google/go-safeweb/safehttp"
 	"github.com/google/safehtml/template"
@@ -87,6 +88,7 @@ func GetUser(r *safehttp.IncomingRequest) string {
 func (a auth) Commit(w safehttp.ResponseHeadersWriter, r *safehttp.IncomingRequest, resp safehttp.Response, cfg safehttp.InterceptorConfig) {
 	action := r.Context().Value(changeSessCtx)
 	if action == nil {
+		log.Printf("no action")
 		return
 	}
 	act := action.(string)
@@ -95,18 +97,26 @@ func (a auth) Commit(w safehttp.ResponseHeadersWriter, r *safehttp.IncomingReque
 	case clearSess:
 		a.db.DelSession(user)
 		w.AddCookie(safehttp.NewCookie(sessionCookie, ""))
+		log.Printf("Deleted session for %q", user)
 	case setSess:
 		token := a.db.GetToken(user)
 		w.AddCookie(safehttp.NewCookie(sessionCookie, token))
+		log.Printf("Created session for %q", user)
 	}
+	log.Printf("invalid action")
 }
 
 func ClearSession(r *safehttp.IncomingRequest) {
+	log.Println("Clearing session")
 	r.SetContext(context.WithValue(r.Context(), changeSessCtx, clearSess))
 }
 
 func CreateSession(user string, r *safehttp.IncomingRequest) {
-	r.SetContext(context.WithValue(r.Context(), changeSessCtx, user))
+	log.Printf("Creating session for %q", user)
+	r.SetContext(context.WithValue(r.Context(), changeSessCtx, setSess))
+	r.SetContext(context.WithValue(r.Context(), userCtx, user))
+
+	log.Println(r.Context().Value(changeSessCtx))
 }
 
 // SkipAuth allows to mark an endpoint to skip auth checks.
