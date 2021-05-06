@@ -12,27 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package server
+package secure
 
 import (
 	"context"
 
-	"github.com/empijei/go-safeweb-example-app/src/storage"
 	"github.com/google/go-safeweb/safehttp"
 	"github.com/google/safehtml/template"
+
+	"github.com/empijei/go-safeweb-example-app/src/storage"
 )
 
 const sessionCookie = "SESSION"
 
-type userCtxKey string
+type authCtxKey string
 
-const userCtx userCtxKey = "user"
+const (
+	userCtx       authCtxKey = "user"
+	changeSessCtx authCtxKey = "change"
+	clearSess                = "clear"
+	setSess                  = "set"
+)
 
 var unauthMsg = template.MustParseAndExecuteToHTML(`Please <a href="/">login</a> before visiting this page.`)
 
 type auth struct {
-	db         *storage.DB
-	exceptions map[string]struct{}
+	db *storage.DB
 }
 
 func (a auth) Before(w safehttp.ResponseWriter, r *safehttp.IncomingRequest, cfg safehttp.InterceptorConfig) safehttp.Result {
@@ -42,16 +47,14 @@ func (a auth) Before(w safehttp.ResponseWriter, r *safehttp.IncomingRequest, cfg
 		r.SetContext(context.WithValue(r.Context(), userCtx, user))
 	}
 
-	// If the config says we should not perform auth, let's stop executing here.
-	if cfg != nil {
-		if _, ok := cfg.(skipAuth); ok {
-			return safehttp.NotWritten()
-		}
+	if _, ok := cfg.(SkipAuth); ok {
+		// If the config says we should not perform auth, let's stop executing here.
+		return safehttp.NotWritten()
 	}
 
 	if user == "" {
 		// We have to perform auth, and the user was not identified, bail out.
-		return w.WriteError(customError{
+		return w.WriteError(ErrorResponse{
 			code:    safehttp.StatusUnauthorized,
 			message: unauthMsg,
 		})
@@ -71,7 +74,8 @@ func (a auth) userFromCookie(r *safehttp.IncomingRequest) string {
 	return user
 }
 
-func getUser(r *safehttp.IncomingRequest) string {
+// GetUser retrieves the user from the request context.
+func GetUser(r *safehttp.IncomingRequest) string {
 	v := r.Context().Value(userCtx)
 	user, ok := v.(string)
 	if !ok {
@@ -81,11 +85,35 @@ func getUser(r *safehttp.IncomingRequest) string {
 }
 
 func (a auth) Commit(w safehttp.ResponseHeadersWriter, r *safehttp.IncomingRequest, resp safehttp.Response, cfg safehttp.InterceptorConfig) {
+	action := r.Context().Value(changeSessCtx)
+	if action == nil {
+		return
+	}
+	act := action.(string)
+	user := GetUser(r)
+	switch act {
+	case clearSess:
+		a.db.DelSession(user)
+		w.AddCookie(safehttp.NewCookie(sessionCookie, ""))
+	case setSess:
+		token := a.db.GetToken(user)
+		w.AddCookie(safehttp.NewCookie(sessionCookie, token))
+	}
 }
 
-type skipAuth struct{}
+func ClearSession(r *safehttp.IncomingRequest) {
+	r.SetContext(context.WithValue(r.Context(), changeSessCtx, clearSess))
+}
 
-func (skipAuth) Match(i safehttp.Interceptor) bool {
+func CreateSession(user string, r *safehttp.IncomingRequest) {
+	r.SetContext(context.WithValue(r.Context(), changeSessCtx, user))
+}
+
+// SkipAuth allows to mark an endpoint to skip auth checks.
+// Its uses would normally be gated by a security review.
+type SkipAuth struct{}
+
+func (SkipAuth) Match(i safehttp.Interceptor) bool {
 	_, ok := i.(auth)
 	return ok
 }

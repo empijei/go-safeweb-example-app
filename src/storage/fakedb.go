@@ -128,31 +128,20 @@ func (s *DB) HasUser(name string) bool {
 }
 
 // AddUser adds a user to the storage if it is not already there.
-func (s *DB) AddUser(name, password string) error {
+func (s *DB) AddOrAuthUser(name, password string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if password == "" {
-		return errors.New("Password cannot be empty")
+		return errors.New("password cannot be empty")
 	}
-	if _, has := s.credentials[name]; has {
-		return errors.New("User already exists")
+	if storedHash, has := s.credentials[name]; has {
+		if storedHash != hash(password) {
+			return errors.New("wrong password")
+		}
+		return nil
 	}
 	s.credentials[name] = hash(password)
 	return nil
-}
-
-// AuthUser validates the provided credentials against the storage.
-func (s *DB) AuthUser(name, password string) bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if password == "" {
-		return false
-	}
-	storedHash, has := s.credentials[name]
-	if !has {
-		return false
-	}
-	return storedHash == hash(password)
 }
 
 func hash(pw string) string {

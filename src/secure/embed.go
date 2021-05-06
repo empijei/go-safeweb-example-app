@@ -12,25 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package server
+package secure
 
 import (
-	"net/http"
+	"embed"
 
-	"github.com/google/go-safeweb/safehttp"
+	"github.com/google/go-safeweb/safehttp/plugins/htmlinject"
+	"github.com/google/safehtml/template"
 )
 
-type Dispatcher struct{}
+//go:embed templates
+var templatesFS embed.FS
 
-func (Dispatcher) Write(rw http.ResponseWriter, resp safehttp.Response) error {
-	return safehttp.DefaultDispatcher.Write(rw, resp)
-}
+var templates *template.Template
 
-func (Dispatcher) Error(rw http.ResponseWriter, resp safehttp.ErrorResponse) error {
-	if ce, ok := resp.(customError); ok {
-		rw.Header().Set("Content-Type", "text/html; charset=utf-8")
-		rw.WriteHeader(int(ce.code))
-		return templates.ExecuteTemplate(rw, "errors.go.html", ce.message)
+func init() {
+	tplSrc := template.TrustedSourceFromConstant("templates/*.tpl.html")
+	var err error
+	templates, err = htmlinject.LoadGlobEmbed(nil, htmlinject.LoadConfig{}, tplSrc, templatesFS)
+	if err != nil {
+		panic(err)
 	}
-	return safehttp.DefaultDispatcher.Error(rw, resp)
 }
