@@ -23,7 +23,7 @@
   </head>
 
   <body>
-    <h2> Welcome to NoteKeeper </h2>
+    <h2> Here are your notes </h2>
     <form action="/logout" method="post">
       <div class="padded">
         <button type="submit">Logout</button>
@@ -43,7 +43,8 @@
         <input type="text" placeholder="Title" name="title" required>
 
         <label for="text"><b>Text</b></label>
-        <textarea name="text" form="newnote"></textarea>
+        <br>
+        <textarea name="text" class="full-width" form="newnote"></textarea>
 
         <button type="submit">Save</button>
       </div>

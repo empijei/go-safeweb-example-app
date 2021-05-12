@@ -1,9 +1,7 @@
 github.com/google/go-cmp v0.5.0 h1:/QaMHBdZ26BB3SSst0Iwl10Epc+xhTquomWX0oZEB6w=
 github.com/google/go-cmp v0.5.0/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
-github.com/google/go-safeweb v0.0.0-20210415115656-d4d7197bce59 h1:45/ETfbCwRY5hPsrfCgYCTIVZP8ypQfPM01jNrzRDyU=
-github.com/google/go-safeweb v0.0.0-20210415115656-d4d7197bce59/go.mod h1:28S2YiX/zysUtKjBAteIiXNBZCFR/U/P1b0N1thOz68=
-github.com/google/go-safeweb v0.0.0-20210506093602-4978ef425126 h1:muh126ojfk6keWFqGiBC2UwUICDaatObW5+/mX0Dn00=
-github.com/google/go-safeweb v0.0.0-20210506093602-4978ef425126/go.mod h1:/RAA/uMFKPfboLuGyP/YXQYIiPN72PAIxGB7lVHNWrY=
+github.com/google/go-safeweb v0.0.0-20210512121813-2f2da980e2ef h1:n5mCa5gm1dsVAdqfBn8Sn1Idv1a3pmK5VlDTJUP9ze0=
+github.com/google/go-safeweb v0.0.0-20210512121813-2f2da980e2ef/go.mod h1:/RAA/uMFKPfboLuGyP/YXQYIiPN72PAIxGB7lVHNWrY=
 github.com/google/safehtml v0.0.2 h1:ZOt2VXg4x24bW0m2jtzAOkhoXV0iM8vNKc0paByCZqM=
 github.com/google/safehtml v0.0.2/go.mod h1:L4KWwDsUJdECRAEpZoBn3O64bQaywRscowZjJAzjHnU=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
@@ -38,4 +36,5 @@ golang.org/x/tools v0.1.0/go.mod h1:xkSsbof2nBLbhDlRMhhhyNLN/zl3eTqcnHD5viDpcZ0=
 golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
+golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 h1:go1bK/D/BFZV2I8cIQd1NKEZ+0owSTG1fDTci4IqFcE=
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=

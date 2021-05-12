@@ -107,7 +107,7 @@ func indexHandler(deps *serverDeps) safehttp.Handler {
 	return safehttp.HandlerFunc(func(rw safehttp.ResponseWriter, r *safehttp.IncomingRequest) safehttp.Result {
 		user := secure.GetUser(r)
 		if user != "" {
-			return rw.Redirect(r, "/notes/", safehttp.StatusTemporaryRedirect)
+			return safehttp.Redirect(rw, r, "/notes/", safehttp.StatusTemporaryRedirect)
 		}
 		return safehttp.ExecuteNamedTemplate(rw, templates, "index.tpl.html", nil)
 	})
@@ -118,7 +118,7 @@ func indexHandler(deps *serverDeps) safehttp.Handler {
 func logoutHandler(deps *serverDeps) safehttp.Handler {
 	return safehttp.HandlerFunc(func(rw safehttp.ResponseWriter, r *safehttp.IncomingRequest) safehttp.Result {
 		secure.ClearSession(r)
-		return rw.Redirect(r, "/", safehttp.StatusTemporaryRedirect)
+		return safehttp.Redirect(rw, r, "/", safehttp.StatusSeeOther)
 	})
 }
 func postLoginHandler(deps *serverDeps) safehttp.Handler {
@@ -141,6 +141,6 @@ func postLoginHandler(deps *serverDeps) safehttp.Handler {
 			return rw.WriteError(invalidErr)
 		}
 		secure.CreateSession(username, r)
-		return rw.Redirect(r, "/notes/", safehttp.StatusTemporaryRedirect)
+		return safehttp.Redirect(rw, r, "/notes/", safehttp.StatusSeeOther)
 	})
 }

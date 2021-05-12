@@ -18,6 +18,13 @@ button {
   margin: 8px 0;
   border: none;
   cursor: pointer;
+}
+
+textarea {
+  height: 100px;
+}
+
+.full-width {
   width: 100%;
 }
 

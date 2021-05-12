@@ -34,6 +34,7 @@ var (
 )
 
 func main() {
+	log.SetFlags(log.Flags() | log.Lshortfile)
 	flag.Parse()
 	safehttp.UseLocalDev() // TODO(clap): remove this
 	if *dev {
