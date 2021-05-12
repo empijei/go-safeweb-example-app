@@ -24,6 +24,9 @@ import (
 	"github.com/empijei/go-safeweb-example-app/src/storage"
 )
 
+// TODO(kele|clap): comment on the role of a custom Interceptor.
+// Potentially consider moving this to its own package.
+
 const sessionCookie = "SESSION"
 
 type authCtxKey string
@@ -116,9 +119,12 @@ func CreateSession(user string, r *safehttp.IncomingRequest) {
 
 // SkipAuth allows to mark an endpoint to skip auth checks.
 // Its uses would normally be gated by a security review.
+// TODO(clap|kele): potentially go in depth with this describing the mechanism,
+// the linter configurations etc.
 type SkipAuth struct{}
 
 func (SkipAuth) Match(i safehttp.Interceptor) bool {
+	// This configuration only applies to the auth plugin.
 	_, ok := i.(auth)
 	return ok
 }

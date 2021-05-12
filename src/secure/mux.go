@@ -32,6 +32,7 @@ import (
 type dispatcher struct{}
 
 func (dispatcher) Write(rw http.ResponseWriter, resp safehttp.Response) error {
+	// The default dispatcher knows how to write all responses we use in this project.
 	return safehttp.DefaultDispatcher{}.Write(rw, resp)
 }
 
@@ -41,15 +42,14 @@ func (dispatcher) Error(rw http.ResponseWriter, resp safehttp.ErrorResponse) err
 		rw.WriteHeader(int(ce.code))
 		return templates.ExecuteTemplate(rw, "error.tpl.html", ce.message)
 	}
+	// Calling the default dispatcher in case we have no custom responses that match.
+	// This is strongly advised.
 	return safehttp.DefaultDispatcher{}.Error(rw, resp)
 }
 
 func NewMux(db *storage.DB, addr string) *safehttp.ServeMuxConfig {
 	c := safehttp.NewServeMuxConfig(dispatcher{})
-	// TODO(clap): add a report group once we support reporting.
 	c.Intercept(coop.Default(""))
-	// TODO(clap): add a report-uri once we support reporting.
-	// TODO(clap): find a way to make the FramingPolicy here work together with the Framing plugin once we have it.
 	c.Intercept(csp.Default(""))
 	c.Intercept(fetchmetadata.NewInterceptor())
 	c.Intercept(hostcheck.New(addr))

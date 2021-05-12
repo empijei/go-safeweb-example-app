@@ -12,27 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package secure TODO(clap|kele): describe the assumptions we are under, e.g.
+// this package is vetted by a security team and that no one else can instantiate
+// a servemux config or serve it.
 package secure
-
-import (
-	"github.com/google/go-safeweb/safehttp"
-	"github.com/google/safehtml"
-)
-
-// TODO(clap|kele): comment on custom responses and error responses.
-
-type ErrorResponse struct {
-	code    safehttp.StatusCode
-	message safehtml.HTML
-}
-
-func NewErrorResponse(code safehttp.StatusCode, message safehtml.HTML) ErrorResponse {
-	return ErrorResponse{
-		code:    code,
-		message: message,
-	}
-}
-
-func (e ErrorResponse) Code() safehttp.StatusCode {
-	return e.code
-}

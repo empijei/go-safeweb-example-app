@@ -11,6 +11,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
+
+
+<!-- TODO(clap|kele): describe that this template is known at compile time to not contain XSS. -->
 <html>
 
   <head>
@@ -23,19 +26,22 @@
   </head>
 
   <body>
-    <h2> Here are your notes </h2>
+    <h2> Hello {{.user}}! Here are your notes </h2>
     <form action="/logout" method="post">
       <div class="padded">
         <button type="submit">Logout</button>
       </div>
     </form>
 
+    <!-- TODO(clap): style these. -->
     <dl>
       {{ range .notes }}
       <dt>{{.Title}}</dt>
       <dd>{{.Text}}</dd>
       {{ end}}
     </dl>
+
+    <!-- TODO(clap): add some client-side JS to help with the note generation. -->
 
     <form action="/notes" method="post" id="newnote">
       <div class="padded">

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package server TODO(clap|kele) describe this as what the users would normally have to write.
 package server
 
 import (
@@ -36,6 +37,7 @@ var templates *template.Template
 func init() {
 	tplSrc := template.TrustedSourceFromConstant("templates/*.tpl.html")
 	var err error
+	// Automatically inject CSP nonces and XSRF tokens placeholders.
 	templates, err = htmlinject.LoadGlobEmbed(nil, htmlinject.LoadConfig{}, tplSrc, templatesFS)
 	if err != nil {
 		panic(err)
@@ -51,11 +53,12 @@ func Load(db *storage.DB, cfg *safehttp.ServeMuxConfig) {
 		db: db,
 	}
 
+	// Private endpoints, only accessible to authenticated users (default).
 	cfg.Handle("/notes/", "GET", getNotesHandler(deps))
 	cfg.Handle("/notes", "POST", postNotesHandler(deps))
-
 	cfg.Handle("/logout", "POST", logoutHandler(deps))
 
+	// Public enpoints, no auth checks performed.
 	cfg.Handle("/login", "POST", postLoginHandler(deps), secure.SkipAuth{})
 	cfg.Handle("/static/", "GET", safehttp.FileServerEmbed(staticFiles), secure.SkipAuth{})
 	cfg.Handle("/", "GET", indexHandler(deps), secure.SkipAuth{})
