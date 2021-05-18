@@ -60,14 +60,14 @@ func Load(db *storage.DB, cfg *safehttp.ServeMuxConfig) {
 	cfg.Handle("/logout", "POST", logoutHandler(deps))
 
 	// Public enpoints, no auth checks performed.
-	cfg.Handle("/login", "POST", postLoginHandler(deps), auth.SkipAuth{})
-	cfg.Handle("/static/", "GET", safehttp.FileServerEmbed(staticFiles), auth.SkipAuth{})
-	cfg.Handle("/", "GET", indexHandler(deps), auth.SkipAuth{})
+	cfg.Handle("/login", "POST", postLoginHandler(deps), auth.Skip{})
+	cfg.Handle("/static/", "GET", safehttp.FileServerEmbed(staticFiles), auth.Skip{})
+	cfg.Handle("/", "GET", indexHandler(deps), auth.Skip{})
 }
 
 func getNotesHandler(deps *serverDeps) safehttp.Handler {
 	return safehttp.HandlerFunc(func(rw safehttp.ResponseWriter, r *safehttp.IncomingRequest) safehttp.Result {
-		user := auth.GetUser(r)
+		user := auth.User(r)
 		notes := deps.db.GetNotes(user)
 		return safehttp.ExecuteNamedTemplate(rw, templates, "notes.tpl.html", map[string]interface{}{
 			"notes": notes,
@@ -96,7 +96,7 @@ func postNotesHandler(deps *serverDeps) safehttp.Handler {
 		if title == "" || body == "" {
 			return rw.WriteError(noFieldsErr)
 		}
-		user := auth.GetUser(r)
+		user := auth.User(r)
 		deps.db.AddOrEditNote(user, storage.Note{Title: title, Text: body})
 
 		notes := deps.db.GetNotes(user)
@@ -109,7 +109,7 @@ func postNotesHandler(deps *serverDeps) safehttp.Handler {
 
 func indexHandler(deps *serverDeps) safehttp.Handler {
 	return safehttp.HandlerFunc(func(rw safehttp.ResponseWriter, r *safehttp.IncomingRequest) safehttp.Result {
-		user := auth.GetUser(r)
+		user := auth.User(r)
 		if user != "" {
 			return safehttp.Redirect(rw, r, "/notes/", safehttp.StatusTemporaryRedirect)
 		}

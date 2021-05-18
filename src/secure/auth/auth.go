@@ -25,9 +25,6 @@ import (
 	"github.com/empijei/go-safeweb-example-app/src/storage"
 )
 
-// TODO(kele|clap): comment on the role of a custom Interceptor.
-// Potentially consider moving this to its own package.
-
 const sessionCookie = "SESSION"
 
 type ctxKey string
@@ -41,6 +38,10 @@ const (
 
 var unauthMsg = template.MustParseAndExecuteToHTML(`Please <a href="/">login</a> before visiting this page.`)
 
+// Interceptor is an auth (access control) interceptor.
+//
+// It showcases how safehttp.Interceptor could be implement to provide custom
+// security features. See https://pkg.go.dev/github.com/google/go-safeweb/safehttp#hdr-Interceptors.
 type Interceptor struct {
 	DB *storage.DB
 }
@@ -52,7 +53,7 @@ func (ip Interceptor) Before(w safehttp.ResponseWriter, r *safehttp.IncomingRequ
 		r.SetContext(context.WithValue(r.Context(), userCtx, user))
 	}
 
-	if _, ok := cfg.(SkipAuth); ok {
+	if _, ok := cfg.(Skip); ok {
 		// If the config says we should not perform auth, let's stop executing here.
 		return safehttp.NotWritten()
 	}
@@ -67,35 +68,13 @@ func (ip Interceptor) Before(w safehttp.ResponseWriter, r *safehttp.IncomingRequ
 	return safehttp.NotWritten()
 }
 
-func (ip Interceptor) userFromCookie(r *safehttp.IncomingRequest) string {
-	sess, err := r.Cookie(sessionCookie)
-	if err != nil || sess.Value() == "" {
-		return ""
-	}
-	user, ok := ip.DB.GetUser(sess.Value())
-	if !ok {
-		return ""
-	}
-	return user
-}
-
-// GetUser retrieves the user from the request context.
-func GetUser(r *safehttp.IncomingRequest) string {
-	v := r.Context().Value(userCtx)
-	user, ok := v.(string)
-	if !ok {
-		return ""
-	}
-	return user
-}
-
 func (ip Interceptor) Commit(w safehttp.ResponseHeadersWriter, r *safehttp.IncomingRequest, resp safehttp.Response, cfg safehttp.InterceptorConfig) {
 	action := r.Context().Value(changeSessCtx)
 	if action == nil {
 		return
 	}
 	act := action.(string)
-	user := GetUser(r)
+	user := User(r)
 	switch act {
 	case clearSess:
 		ip.DB.DelSession(user)
@@ -108,6 +87,28 @@ func (ip Interceptor) Commit(w safehttp.ResponseHeadersWriter, r *safehttp.Incom
 	}
 }
 
+// User retrieves the user from the request context.
+func User(r *safehttp.IncomingRequest) string {
+	v := r.Context().Value(userCtx)
+	user, ok := v.(string)
+	if !ok {
+		return ""
+	}
+	return user
+}
+
+func (ip Interceptor) userFromCookie(r *safehttp.IncomingRequest) string {
+	sess, err := r.Cookie(sessionCookie)
+	if err != nil || sess.Value() == "" {
+		return ""
+	}
+	user, ok := ip.DB.GetUser(sess.Value())
+	if !ok {
+		return ""
+	}
+	return user
+}
+
 func ClearSession(r *safehttp.IncomingRequest) {
 	r.SetContext(context.WithValue(r.Context(), changeSessCtx, clearSess))
 }
@@ -118,13 +119,13 @@ func CreateSession(user string, r *safehttp.IncomingRequest) {
 
 }
 
-// SkipAuth allows to mark an endpoint to skip auth checks.
+// Skip allows to mark an endpoint to skip auth checks.
 // Its uses would normally be gated by a security review.
 // TODO(clap|kele): potentially go in depth with this describing the mechanism,
 // the linter configurations etc.
-type SkipAuth struct{}
+type Skip struct{}
 
-func (SkipAuth) Match(i safehttp.Interceptor) bool {
+func (Skip) Match(i safehttp.Interceptor) bool {
 	// This configuration only applies to the auth plugin.
 	_, ok := i.(Interceptor)
 	return ok
