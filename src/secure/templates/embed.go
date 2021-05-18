@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package secure
+package templates
 
 import (
 	"embed"
@@ -21,15 +21,15 @@ import (
 	"github.com/google/safehtml/template"
 )
 
-//go:embed templates
+//go:embed *.tpl.html
 var templatesFS embed.FS
 
-var templates *template.Template
+var All *template.Template
 
 func init() {
-	tplSrc := template.TrustedSourceFromConstant("templates/*.tpl.html")
+	tplSrc := template.TrustedSourceFromConstant("*.tpl.html")
 	var err error
-	templates, err = htmlinject.LoadGlobEmbed(nil, htmlinject.LoadConfig{}, tplSrc, templatesFS)
+	All, err = htmlinject.LoadGlobEmbed(nil, htmlinject.LoadConfig{}, tplSrc, templatesFS)
 	if err != nil {
 		panic(err)
 	}

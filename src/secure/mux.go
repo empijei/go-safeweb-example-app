@@ -28,25 +28,25 @@ import (
 
 	"github.com/empijei/go-safeweb-example-app/src/secure/auth"
 	"github.com/empijei/go-safeweb-example-app/src/secure/responses"
+	"github.com/empijei/go-safeweb-example-app/src/secure/templates"
 	"github.com/empijei/go-safeweb-example-app/src/storage"
 )
 
-type dispatcher struct{}
-
-func (dispatcher) Write(rw http.ResponseWriter, resp safehttp.Response) error {
-	// The default dispatcher knows how to write all responses we use in this project.
-	return safehttp.DefaultDispatcher{}.Write(rw, resp)
+type dispatcher struct {
+	// No need for a Write method, the default dispatcher knows how to write all
+	// non-error responses we use in this project.
+	safehttp.DefaultDispatcher
 }
 
-func (dispatcher) Error(rw http.ResponseWriter, resp safehttp.ErrorResponse) error {
+func (d dispatcher) Error(rw http.ResponseWriter, resp safehttp.ErrorResponse) error {
 	if ce, ok := resp.(responses.Error); ok {
 		rw.Header().Set("Content-Type", "text/html; charset=utf-8")
 		rw.WriteHeader(int(ce.Code()))
-		return templates.ExecuteTemplate(rw, "error.tpl.html", ce.Message)
+		return templates.All.ExecuteTemplate(rw, "error.tpl.html", ce.Message)
 	}
 	// Calling the default dispatcher in case we have no custom responses that match.
 	// This is strongly advised.
-	return safehttp.DefaultDispatcher{}.Error(rw, resp)
+	return d.DefaultDispatcher.Error(rw, resp)
 }
 
 func NewMux(db *storage.DB, addr string) *safehttp.ServeMuxConfig {
