@@ -20,7 +20,8 @@ import (
 
 	"embed"
 
-	"github.com/empijei/go-safeweb-example-app/src/secure"
+	"github.com/empijei/go-safeweb-example-app/src/secure/auth"
+	"github.com/empijei/go-safeweb-example-app/src/secure/responses"
 	"github.com/empijei/go-safeweb-example-app/src/storage"
 	"github.com/google/go-safeweb/safehttp/plugins/htmlinject"
 	"github.com/google/safehtml/template"
@@ -59,14 +60,14 @@ func Load(db *storage.DB, cfg *safehttp.ServeMuxConfig) {
 	cfg.Handle("/logout", "POST", logoutHandler(deps))
 
 	// Public enpoints, no auth checks performed.
-	cfg.Handle("/login", "POST", postLoginHandler(deps), secure.SkipAuth{})
-	cfg.Handle("/static/", "GET", safehttp.FileServerEmbed(staticFiles), secure.SkipAuth{})
-	cfg.Handle("/", "GET", indexHandler(deps), secure.SkipAuth{})
+	cfg.Handle("/login", "POST", postLoginHandler(deps), auth.SkipAuth{})
+	cfg.Handle("/static/", "GET", safehttp.FileServerEmbed(staticFiles), auth.SkipAuth{})
+	cfg.Handle("/", "GET", indexHandler(deps), auth.SkipAuth{})
 }
 
 func getNotesHandler(deps *serverDeps) safehttp.Handler {
 	return safehttp.HandlerFunc(func(rw safehttp.ResponseWriter, r *safehttp.IncomingRequest) safehttp.Result {
-		user := secure.GetUser(r)
+		user := auth.GetUser(r)
 		notes := deps.db.GetNotes(user)
 		return safehttp.ExecuteNamedTemplate(rw, templates, "notes.tpl.html", map[string]interface{}{
 			"notes": notes,
@@ -76,11 +77,11 @@ func getNotesHandler(deps *serverDeps) safehttp.Handler {
 }
 
 func postNotesHandler(deps *serverDeps) safehttp.Handler {
-	noFormErr := secure.NewErrorResponse(
+	noFormErr := responses.NewError(
 		safehttp.StatusBadRequest,
 		template.MustParseAndExecuteToHTML(`Please submit a valid form with "title" and "text" parameters.`),
 	)
-	noFieldsErr := secure.NewErrorResponse(
+	noFieldsErr := responses.NewError(
 		safehttp.StatusBadRequest,
 		template.MustParseAndExecuteToHTML("Both title and text must be specified."),
 	)
@@ -95,7 +96,7 @@ func postNotesHandler(deps *serverDeps) safehttp.Handler {
 		if title == "" || body == "" {
 			return rw.WriteError(noFieldsErr)
 		}
-		user := secure.GetUser(r)
+		user := auth.GetUser(r)
 		deps.db.AddOrEditNote(user, storage.Note{Title: title, Text: body})
 
 		notes := deps.db.GetNotes(user)
@@ -108,7 +109,7 @@ func postNotesHandler(deps *serverDeps) safehttp.Handler {
 
 func indexHandler(deps *serverDeps) safehttp.Handler {
 	return safehttp.HandlerFunc(func(rw safehttp.ResponseWriter, r *safehttp.IncomingRequest) safehttp.Result {
-		user := secure.GetUser(r)
+		user := auth.GetUser(r)
 		if user != "" {
 			return safehttp.Redirect(rw, r, "/notes/", safehttp.StatusTemporaryRedirect)
 		}
@@ -120,13 +121,13 @@ func indexHandler(deps *serverDeps) safehttp.Handler {
 // Since this is a simple example application they are here together with the rest.
 func logoutHandler(deps *serverDeps) safehttp.Handler {
 	return safehttp.HandlerFunc(func(rw safehttp.ResponseWriter, r *safehttp.IncomingRequest) safehttp.Result {
-		secure.ClearSession(r)
+		auth.ClearSession(r)
 		return safehttp.Redirect(rw, r, "/", safehttp.StatusSeeOther)
 	})
 }
 func postLoginHandler(deps *serverDeps) safehttp.Handler {
 	// Always return the same error to not leak the existence of a user.
-	invalidErr := secure.NewErrorResponse(
+	invalidErr := responses.NewError(
 		safehttp.StatusBadRequest,
 		template.MustParseAndExecuteToHTML("Please specify a username and a password, both must be non-empty and your password must match the one you use to register."),
 	)
@@ -143,7 +144,7 @@ func postLoginHandler(deps *serverDeps) safehttp.Handler {
 		if err := deps.db.AddOrAuthUser(username, password); err != nil {
 			return rw.WriteError(invalidErr)
 		}
-		secure.CreateSession(username, r)
+		auth.CreateSession(username, r)
 		return safehttp.Redirect(rw, r, "/notes/", safehttp.StatusSeeOther)
 	})
 }

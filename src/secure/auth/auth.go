@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package secure
+package auth
 
 import (
 	"context"
@@ -21,6 +21,7 @@ import (
 	"github.com/google/go-safeweb/safehttp"
 	"github.com/google/safehtml/template"
 
+	"github.com/empijei/go-safeweb-example-app/src/secure/responses"
 	"github.com/empijei/go-safeweb-example-app/src/storage"
 )
 
@@ -29,24 +30,24 @@ import (
 
 const sessionCookie = "SESSION"
 
-type authCtxKey string
+type ctxKey string
 
 const (
-	userCtx       authCtxKey = "user"
-	changeSessCtx authCtxKey = "change"
-	clearSess                = "clear"
-	setSess                  = "set"
+	userCtx       ctxKey = "user"
+	changeSessCtx ctxKey = "change"
+	clearSess            = "clear"
+	setSess              = "set"
 )
 
 var unauthMsg = template.MustParseAndExecuteToHTML(`Please <a href="/">login</a> before visiting this page.`)
 
-type auth struct {
-	db *storage.DB
+type Interceptor struct {
+	DB *storage.DB
 }
 
-func (a auth) Before(w safehttp.ResponseWriter, r *safehttp.IncomingRequest, cfg safehttp.InterceptorConfig) safehttp.Result {
+func (ip Interceptor) Before(w safehttp.ResponseWriter, r *safehttp.IncomingRequest, cfg safehttp.InterceptorConfig) safehttp.Result {
 	// Identify the user.
-	user := a.userFromCookie(r)
+	user := ip.userFromCookie(r)
 	if user != "" {
 		r.SetContext(context.WithValue(r.Context(), userCtx, user))
 	}
@@ -58,20 +59,20 @@ func (a auth) Before(w safehttp.ResponseWriter, r *safehttp.IncomingRequest, cfg
 
 	if user == "" {
 		// We have to perform auth, and the user was not identified, bail out.
-		return w.WriteError(ErrorResponse{
-			code:    safehttp.StatusUnauthorized,
-			message: unauthMsg,
+		return w.WriteError(responses.Error{
+			StatusCode: safehttp.StatusUnauthorized,
+			Message:    unauthMsg,
 		})
 	}
 	return safehttp.NotWritten()
 }
 
-func (a auth) userFromCookie(r *safehttp.IncomingRequest) string {
+func (ip Interceptor) userFromCookie(r *safehttp.IncomingRequest) string {
 	sess, err := r.Cookie(sessionCookie)
 	if err != nil || sess.Value() == "" {
 		return ""
 	}
-	user, ok := a.db.GetUser(sess.Value())
+	user, ok := ip.DB.GetUser(sess.Value())
 	if !ok {
 		return ""
 	}
@@ -88,7 +89,7 @@ func GetUser(r *safehttp.IncomingRequest) string {
 	return user
 }
 
-func (a auth) Commit(w safehttp.ResponseHeadersWriter, r *safehttp.IncomingRequest, resp safehttp.Response, cfg safehttp.InterceptorConfig) {
+func (ip Interceptor) Commit(w safehttp.ResponseHeadersWriter, r *safehttp.IncomingRequest, resp safehttp.Response, cfg safehttp.InterceptorConfig) {
 	action := r.Context().Value(changeSessCtx)
 	if action == nil {
 		return
@@ -97,10 +98,10 @@ func (a auth) Commit(w safehttp.ResponseHeadersWriter, r *safehttp.IncomingReque
 	user := GetUser(r)
 	switch act {
 	case clearSess:
-		a.db.DelSession(user)
+		ip.DB.DelSession(user)
 		w.AddCookie(safehttp.NewCookie(sessionCookie, ""))
 	case setSess:
-		token := a.db.GetToken(user)
+		token := ip.DB.GetToken(user)
 		w.AddCookie(safehttp.NewCookie(sessionCookie, token))
 	default:
 		log.Printf("invalid action")
@@ -125,6 +126,6 @@ type SkipAuth struct{}
 
 func (SkipAuth) Match(i safehttp.Interceptor) bool {
 	// This configuration only applies to the auth plugin.
-	_, ok := i.(auth)
+	_, ok := i.(Interceptor)
 	return ok
 }

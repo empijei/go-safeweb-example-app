@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package secure
+package responses
 
 import (
 	"github.com/google/go-safeweb/safehttp"
@@ -21,18 +21,18 @@ import (
 
 // TODO(clap|kele): comment on custom responses and error responses.
 
-type ErrorResponse struct {
-	code    safehttp.StatusCode
-	message safehtml.HTML
+type Error struct {
+	StatusCode safehttp.StatusCode
+	Message    safehtml.HTML
 }
 
-func NewErrorResponse(code safehttp.StatusCode, message safehtml.HTML) ErrorResponse {
-	return ErrorResponse{
-		code:    code,
-		message: message,
+func NewError(code safehttp.StatusCode, message safehtml.HTML) Error {
+	return Error{
+		StatusCode: code,
+		Message:    message,
 	}
 }
 
-func (e ErrorResponse) Code() safehttp.StatusCode {
-	return e.code
+func (e Error) Code() safehttp.StatusCode {
+	return e.StatusCode
 }
