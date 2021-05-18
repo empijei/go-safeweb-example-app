@@ -125,26 +125,28 @@ func logoutHandler(deps *serverDeps) safehttp.Handler {
 		return safehttp.Redirect(rw, r, "/", safehttp.StatusSeeOther)
 	})
 }
+
+var invalidAuthErr responses.Error = responses.NewError(
+	safehttp.StatusBadRequest,
+	template.MustParseAndExecuteToHTML("Please specify a username and a password, both must be non-empty and your password must match the one you use to register."),
+)
+
 func postLoginHandler(deps *serverDeps) safehttp.Handler {
 	// Always return the same error to not leak the existence of a user.
-	invalidErr := responses.NewError(
-		safehttp.StatusBadRequest,
-		template.MustParseAndExecuteToHTML("Please specify a username and a password, both must be non-empty and your password must match the one you use to register."),
-	)
 	return safehttp.HandlerFunc(func(rw safehttp.ResponseWriter, r *safehttp.IncomingRequest) safehttp.Result {
 		form, err := r.PostForm()
 		if err != nil {
-			return rw.WriteError(invalidErr)
+			return rw.WriteError(invalidAuthErr)
 		}
 		username := form.String("username", "")
 		password := form.String("password", "")
 		if username == "" || password == "" {
-			return rw.WriteError(invalidErr)
+			return rw.WriteError(invalidAuthErr)
 		}
 		if err := deps.db.AddOrAuthUser(username, password); err != nil {
-			return rw.WriteError(invalidErr)
+			return rw.WriteError(invalidAuthErr)
 		}
-		auth.CreateSession(username, r)
+		auth.CreateSession(r, username)
 		return safehttp.Redirect(rw, r, "/notes/", safehttp.StatusSeeOther)
 	})
 }
