@@ -28,7 +28,8 @@ import (
 	"github.com/empijei/go-safeweb-example-app/src/storage"
 )
 
-func NewMux(db *storage.DB, addr string) *safehttp.ServeMuxConfig {
+// NewMuxConfig creates a safe ServeMuxConfig.
+func NewMuxConfig(db *storage.DB, addr string) *safehttp.ServeMuxConfig {
 	c := safehttp.NewServeMuxConfig(dispatcher{})
 	c.Intercept(coop.Default(""))
 	c.Intercept(csp.Default(""))

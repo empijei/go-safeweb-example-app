@@ -43,7 +43,7 @@ func main() {
 	db := storage.NewDB()
 
 	addr := net.JoinHostPort("localhost", strconv.Itoa(*port))
-	cfg := secure.NewMux(db, addr)
+	cfg := secure.NewMuxConfig(db, addr)
 	server.Load(db, cfg)
 
 	log.Printf("Listening on %q", addr)
