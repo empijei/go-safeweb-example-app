@@ -19,8 +19,6 @@ import (
 	"github.com/google/safehtml"
 )
 
-// TODO(clap|kele): comment on custom responses and error responses.
-
 // Error is a safe error response (as recognized by the secure.dispatcher).
 //
 // This showcases implementing custom safe responses. See
