@@ -15,8 +15,6 @@
 package secure
 
 import (
-	"net/http"
-
 	"github.com/google/go-safeweb/safehttp"
 	"github.com/google/go-safeweb/safehttp/plugins/coop"
 	"github.com/google/go-safeweb/safehttp/plugins/csp"
@@ -27,27 +25,8 @@ import (
 	"github.com/google/go-safeweb/safehttp/plugins/xsrf/xsrfhtml"
 
 	"github.com/empijei/go-safeweb-example-app/src/secure/auth"
-	"github.com/empijei/go-safeweb-example-app/src/secure/responses"
-	"github.com/empijei/go-safeweb-example-app/src/secure/templates"
 	"github.com/empijei/go-safeweb-example-app/src/storage"
 )
-
-type dispatcher struct {
-	// No need for a Write method, the default dispatcher knows how to write all
-	// non-error responses we use in this project.
-	safehttp.DefaultDispatcher
-}
-
-func (d dispatcher) Error(rw http.ResponseWriter, resp safehttp.ErrorResponse) error {
-	if ce, ok := resp.(responses.Error); ok {
-		rw.Header().Set("Content-Type", "text/html; charset=utf-8")
-		rw.WriteHeader(int(ce.Code()))
-		return templates.All.ExecuteTemplate(rw, "error.tpl.html", ce.Message)
-	}
-	// Calling the default dispatcher in case we have no custom responses that match.
-	// This is strongly advised.
-	return d.DefaultDispatcher.Error(rw, resp)
-}
 
 func NewMux(db *storage.DB, addr string) *safehttp.ServeMuxConfig {
 	c := safehttp.NewServeMuxConfig(dispatcher{})
