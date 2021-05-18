@@ -26,6 +26,8 @@ import (
 	"github.com/google/go-safeweb/safehttp/plugins/staticheaders"
 	"github.com/google/go-safeweb/safehttp/plugins/xsrf/xsrfhtml"
 
+	"github.com/empijei/go-safeweb-example-app/src/secure/auth"
+	"github.com/empijei/go-safeweb-example-app/src/secure/responses"
 	"github.com/empijei/go-safeweb-example-app/src/storage"
 )
 
@@ -37,10 +39,10 @@ func (dispatcher) Write(rw http.ResponseWriter, resp safehttp.Response) error {
 }
 
 func (dispatcher) Error(rw http.ResponseWriter, resp safehttp.ErrorResponse) error {
-	if ce, ok := resp.(ErrorResponse); ok {
+	if ce, ok := resp.(responses.Error); ok {
 		rw.Header().Set("Content-Type", "text/html; charset=utf-8")
-		rw.WriteHeader(int(ce.code))
-		return templates.ExecuteTemplate(rw, "error.tpl.html", ce.message)
+		rw.WriteHeader(int(ce.Code()))
+		return templates.ExecuteTemplate(rw, "error.tpl.html", ce.Message)
 	}
 	// Calling the default dispatcher in case we have no custom responses that match.
 	// This is strongly advised.
@@ -56,6 +58,6 @@ func NewMux(db *storage.DB, addr string) *safehttp.ServeMuxConfig {
 	c.Intercept(hsts.Default())
 	c.Intercept(staticheaders.Interceptor{})
 	c.Intercept(&xsrfhtml.Interceptor{SecretAppKey: "secret-key-that-should-not-be-in-sources"})
-	c.Intercept(auth{db})
+	c.Intercept(auth.Interceptor{DB: db})
 	return c
 }
