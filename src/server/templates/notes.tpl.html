@@ -23,6 +23,26 @@
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap">
+    <!-- This script will automatically be injected with a nonce that matches
+      the one in the CSP header. -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const textarea = document.getElementsByName('text')[0];
+        document.getElementById('meta-btn')
+          .addEventListener('click', function addMetadata(event) {
+            event.preventDefault();
+            const user = event.target.dataset.user;
+            const date = new Date().toLocaleString(undefined, {
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: 'numeric',
+              hour12: false,
+            });
+            textarea.value = `${textarea.value}\n${user}\n${date}`;
+          });
+      });
+    </script>
   </head>
 
   <body>
@@ -34,10 +54,11 @@
     </form>
 
     <!-- TODO(clap): style these. -->
-    <dl>
+    <dl class="padded">
       {{ range .notes }}
       <dt>{{.Title}}</dt>
-      <dd>{{.Text}}</dd>
+      <dd><pre>{{.Text}}</pre></dd>
+      <br>
       {{ end}}
     </dl>
 
@@ -53,6 +74,7 @@
         <textarea name="text" class="full-width" form="newnote"></textarea>
 
         <button type="submit">Save</button>
+        <button data-user="{{.user}}" id="meta-btn">Add metadata</button>
       </div>
     </form>
   </body>
