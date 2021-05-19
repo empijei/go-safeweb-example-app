@@ -15,8 +15,6 @@
 package secure
 
 import (
-	"net/http"
-
 	"github.com/google/go-safeweb/safehttp"
 	"github.com/google/go-safeweb/safehttp/plugins/coop"
 	"github.com/google/go-safeweb/safehttp/plugins/csp"
@@ -27,29 +25,11 @@ import (
 	"github.com/google/go-safeweb/safehttp/plugins/xsrf/xsrfhtml"
 
 	"github.com/empijei/go-safeweb-example-app/src/secure/auth"
-	"github.com/empijei/go-safeweb-example-app/src/secure/responses"
 	"github.com/empijei/go-safeweb-example-app/src/storage"
 )
 
-type dispatcher struct{}
-
-func (dispatcher) Write(rw http.ResponseWriter, resp safehttp.Response) error {
-	// The default dispatcher knows how to write all responses we use in this project.
-	return safehttp.DefaultDispatcher{}.Write(rw, resp)
-}
-
-func (dispatcher) Error(rw http.ResponseWriter, resp safehttp.ErrorResponse) error {
-	if ce, ok := resp.(responses.Error); ok {
-		rw.Header().Set("Content-Type", "text/html; charset=utf-8")
-		rw.WriteHeader(int(ce.Code()))
-		return templates.ExecuteTemplate(rw, "error.tpl.html", ce.Message)
-	}
-	// Calling the default dispatcher in case we have no custom responses that match.
-	// This is strongly advised.
-	return safehttp.DefaultDispatcher{}.Error(rw, resp)
-}
-
-func NewMux(db *storage.DB, addr string) *safehttp.ServeMuxConfig {
+// NewMuxConfig creates a safe ServeMuxConfig.
+func NewMuxConfig(db *storage.DB, addr string) *safehttp.ServeMuxConfig {
 	c := safehttp.NewServeMuxConfig(dispatcher{})
 	c.Intercept(coop.Default(""))
 	c.Intercept(csp.Default(""))

@@ -13,11 +13,19 @@
 -->
 
 
-<!-- TODO(clap|kele): describe that this template is known at compile time to not contain XSS. -->
+<!--
+  This template is considered safe when used with the
+  https://pkg.go.dev/github.com/google/safehtml/template package. According to
+  the Threat Model
+  (https://pkg.go.dev/github.com/google/safehtml/template#hdr-Threat_model), we
+  trust that this template itself doesn't contain user generated data. When the
+  template is executed with runtime data, contextual autosanitization is
+  performed to prevent from code injection vulnerabilities.
+-->
 <html>
 
   <head>
-    <title>Go Safehttp sample application</title>
+    <title>Go Safe Web sample application</title>
     <link rel="stylesheet" href="/static/styles.css">
 
     <link rel="preconnect" href="https://fonts.gstatic.com">

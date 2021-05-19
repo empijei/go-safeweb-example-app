@@ -19,13 +19,16 @@ import (
 	"github.com/google/safehtml"
 )
 
-// TODO(clap|kele): comment on custom responses and error responses.
-
+// Error is a safe error response (as recognized by the secure.dispatcher).
+//
+// This showcases implementing custom safe responses. See
+// https://pkg.go.dev/github.com/google/safehtml/template#hdr-Threat_model.
 type Error struct {
 	StatusCode safehttp.StatusCode
 	Message    safehtml.HTML
 }
 
+// NewError creates a new error response.
 func NewError(code safehttp.StatusCode, message safehtml.HTML) Error {
 	return Error{
 		StatusCode: code,
@@ -33,6 +36,7 @@ func NewError(code safehttp.StatusCode, message safehtml.HTML) Error {
 	}
 }
 
+// Code returns the HTTP response code.
 func (e Error) Code() safehttp.StatusCode {
 	return e.StatusCode
 }
