@@ -15,9 +15,6 @@
 package auth
 
 import (
-	"context"
-	"log"
-
 	"github.com/google/go-safeweb/safehttp"
 	"github.com/google/safehtml/template"
 
@@ -25,34 +22,33 @@ import (
 	"github.com/empijei/go-safeweb-example-app/src/storage"
 )
 
-// TODO(kele|clap): comment on the role of a custom Interceptor.
-// Potentially consider moving this to its own package.
-
 const sessionCookie = "SESSION"
-
-type ctxKey string
-
-const (
-	userCtx       ctxKey = "user"
-	changeSessCtx ctxKey = "change"
-	clearSess            = "clear"
-	setSess              = "set"
-)
 
 var unauthMsg = template.MustParseAndExecuteToHTML(`Please <a href="/">login</a> before visiting this page.`)
 
+// Interceptor is an auth (access control) interceptor.
+//
+// It showcases how safehttp.Interceptor could be implement to provide custom
+// security features. See https://pkg.go.dev/github.com/google/go-safeweb/safehttp#hdr-Interceptors.
+//
+// In order to interact with the interceptor, use functions from this package.
+// E.g. to clear a user session call ClearSession.
 type Interceptor struct {
 	DB *storage.DB
 }
 
+// Before runs before the request is passed to the handler.
+//
+// Implementation details: this interceptor uses IncomingRequest's context to
+// store user information that's read from a cookie.
 func (ip Interceptor) Before(w safehttp.ResponseWriter, r *safehttp.IncomingRequest, cfg safehttp.InterceptorConfig) safehttp.Result {
 	// Identify the user.
 	user := ip.userFromCookie(r)
 	if user != "" {
-		r.SetContext(context.WithValue(r.Context(), userCtx, user))
+		r.SetContext(ctxWithUser(r.Context(), user))
 	}
 
-	if _, ok := cfg.(SkipAuth); ok {
+	if _, ok := cfg.(Skip); ok {
 		// If the config says we should not perform auth, let's stop executing here.
 		return safehttp.NotWritten()
 	}
@@ -67,6 +63,31 @@ func (ip Interceptor) Before(w safehttp.ResponseWriter, r *safehttp.IncomingRequ
 	return safehttp.NotWritten()
 }
 
+// Commit runs after the handler commited to a response.
+//
+// Implementation details: the interceptor reads IncomingRequest's context to
+// retrieve information about the user and to do what the handler asked it to
+// (through ClearSession or CreateSession).
+func (ip Interceptor) Commit(w safehttp.ResponseHeadersWriter, r *safehttp.IncomingRequest, resp safehttp.Response, cfg safehttp.InterceptorConfig) {
+	user := User(r)
+
+	switch ctxSessionAction(r.Context()) {
+	case clearSess:
+		ip.DB.DelSession(user)
+		w.AddCookie(safehttp.NewCookie(sessionCookie, ""))
+	case setSess:
+		token := ip.DB.GetToken(user)
+		w.AddCookie(safehttp.NewCookie(sessionCookie, token))
+	default:
+		// do nothing
+	}
+}
+
+// User retrieves the user.
+func User(r *safehttp.IncomingRequest) string {
+	return ctxUser(r.Context())
+}
+
 func (ip Interceptor) userFromCookie(r *safehttp.IncomingRequest) string {
 	sess, err := r.Cookie(sessionCookie)
 	if err != nil || sess.Value() == "" {
@@ -79,52 +100,31 @@ func (ip Interceptor) userFromCookie(r *safehttp.IncomingRequest) string {
 	return user
 }
 
-// GetUser retrieves the user from the request context.
-func GetUser(r *safehttp.IncomingRequest) string {
-	v := r.Context().Value(userCtx)
-	user, ok := v.(string)
-	if !ok {
-		return ""
-	}
-	return user
-}
-
-func (ip Interceptor) Commit(w safehttp.ResponseHeadersWriter, r *safehttp.IncomingRequest, resp safehttp.Response, cfg safehttp.InterceptorConfig) {
-	action := r.Context().Value(changeSessCtx)
-	if action == nil {
-		return
-	}
-	act := action.(string)
-	user := GetUser(r)
-	switch act {
-	case clearSess:
-		ip.DB.DelSession(user)
-		w.AddCookie(safehttp.NewCookie(sessionCookie, ""))
-	case setSess:
-		token := ip.DB.GetToken(user)
-		w.AddCookie(safehttp.NewCookie(sessionCookie, token))
-	default:
-		log.Printf("invalid action")
-	}
-}
-
+// ClearSession clears the session.
+//
+// Implementation details: to interact with the interceptor, passes data through
+// the IncomingRequest's context.
 func ClearSession(r *safehttp.IncomingRequest) {
-	r.SetContext(context.WithValue(r.Context(), changeSessCtx, clearSess))
+	r.SetContext(ctxWithSessionAction(r.Context(), clearSess))
 }
 
-func CreateSession(user string, r *safehttp.IncomingRequest) {
-	r.SetContext(context.WithValue(r.Context(), changeSessCtx, setSess))
-	r.SetContext(context.WithValue(r.Context(), userCtx, user))
-
+// CreateSession creates a session.
+//
+// Implementation details: to interact with the interceptor, passes data through
+// the IncomingRequest's context.
+func CreateSession(r *safehttp.IncomingRequest, user string) {
+	r.SetContext(ctxWithSessionAction(r.Context(), setSess))
+	r.SetContext(ctxWithUser(r.Context(), user))
 }
 
-// SkipAuth allows to mark an endpoint to skip auth checks.
-// Its uses would normally be gated by a security review.
-// TODO(clap|kele): potentially go in depth with this describing the mechanism,
-// the linter configurations etc.
-type SkipAuth struct{}
+// Skip allows to mark an endpoint to skip auth checks.
+//
+// Its uses would normally be gated by a security review. You can use the
+// https://github.com/google/go-safeweb/blob/master/cmd/bancheck tool to enforce
+// this.
+type Skip struct{}
 
-func (SkipAuth) Match(i safehttp.Interceptor) bool {
+func (Skip) Match(i safehttp.Interceptor) bool {
 	// This configuration only applies to the auth plugin.
 	_, ok := i.(Interceptor)
 	return ok
